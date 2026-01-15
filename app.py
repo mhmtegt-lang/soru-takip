@@ -95,4 +95,137 @@ with col_kazanim:
 with col_beceri:
     st.markdown("**2. Beceri (Yeni Nesil) Sorular**")
     bd = st.number_input("Doğru", min_value=0, key="bd")
-    by = st
+    by = st.number_input("Yanlış", min_value=0, key="by") # BURASI EKLENDİ
+    bb = st.number_input("Boş", min_value=0, key="bb")    # BURASI EKLENDİ
+
+st.markdown("---")
+kaydet = st.button("Kaydet ve Analiz Et")
+
+if kaydet:
+    if not okul_no or not ogrenci_adi:
+        st.error("Lütfen Okul No ve İsim giriniz!")
+    else:
+        yeni_kayit = {
+            "Tarih": [pd.to_datetime(tarih)],
+            "Okul_No": [okul_no],
+            "Ogrenci_Adi": [ogrenci_adi],
+            "Sinif": [secilen_sinif],
+            "Konu": [secilen_konu],
+            "Kazanim_D": [kd], "Kazanim_Y": [ky], "Kazanim_B": [kb],
+            "Beceri_D": [bd], "Beceri_Y": [by], "Beceri_B": [bb]
+        }
+        yeni_df = pd.concat([df, pd.DataFrame(yeni_kayit)], ignore_index=True)
+        veri_kaydet(yeni_df)
+        df = yeni_df 
+        st.success(f"Tebrikler {ogrenci_adi}! {secilen_konu} konusundaki çalışman kaydedildi.")
+
+# --- BÖLÜM 2: ANALİZ VE KARNE ---
+if okul_no:
+    ogr_df = df[df["Okul_No"] == okul_no].copy()
+    
+    if not ogr_df.empty:
+        st.markdown("---")
+        st.subheader(f"📊 {ogrenci_adi} - Konu Bazlı Başarı Analizi")
+
+        # --- YENİ GRAFİK: KONU BAZLI YIĞILMIŞ SÜTUN GRAFİĞİ ---
+        
+        # 1. Veriyi Konulara Göre Grupla ve Topla
+        konu_ozeti = ogr_df.groupby("Konu")[["Kazanim_D", "Kazanim_Y", "Kazanim_B", "Beceri_D", "Beceri_Y", "Beceri_B"]].sum().reset_index()
+        
+        # 2. Toplam Doğru/Yanlış/Boş Hesapla (Kazanım + Beceri)
+        konu_ozeti["Toplam Doğru"] = konu_ozeti["Kazanim_D"] + konu_ozeti["Beceri_D"]
+        konu_ozeti["Toplam Yanlış"] = konu_ozeti["Kazanim_Y"] + konu_ozeti["Beceri_Y"]
+        konu_ozeti["Toplam Boş"] = konu_ozeti["Kazanim_B"] + konu_ozeti["Beceri_B"]
+        
+        # 3. Grafiği Oluştur (Stacked Bar Chart)
+        fig = go.Figure()
+        
+        # Yeşil Sütun (Doğrular)
+        fig.add_trace(go.Bar(
+            name='Doğru', 
+            x=konu_ozeti['Konu'], 
+            y=konu_ozeti['Toplam Doğru'],
+            marker_color='#2ecc71' # Zümrüt Yeşili
+        ))
+        
+        # Kırmızı Sütun (Yanlışlar)
+        fig.add_trace(go.Bar(
+            name='Yanlış', 
+            x=konu_ozeti['Konu'], 
+            y=konu_ozeti['Toplam Yanlış'],
+            marker_color='#e74c3c' # Canlı Kırmızı
+        ))
+        
+        # Sarı Sütun (Boşlar)
+        fig.add_trace(go.Bar(
+            name='Boş', 
+            x=konu_ozeti['Konu'], 
+            y=konu_ozeti['Toplam Boş'],
+            marker_color='#f1c40f' # Sarı
+        ))
+        
+        # Grafik Ayarları
+        fig.update_layout(
+            barmode='stack', # Sütunları üst üste bindir
+            title="Konulara Göre Çözülen Soru Dağılımı",
+            xaxis_title="Konular",
+            yaxis_title="Soru Sayısı",
+            legend_title="Durum"
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # Detaylı Tablo Gösterimi
+        st.write("### Konu Detay Tablosu")
+        # Sadece özet sütunları gösterelim
+        gosterim_tablosu = konu_ozeti[["Konu", "Toplam Doğru", "Toplam Yanlış", "Toplam Boş"]]
+        st.dataframe(gosterim_tablosu, use_container_width=True)
+
+
+        # --- HEDEF ÇUBUĞU ---
+        st.markdown("---")
+        st.subheader("🎯 Haftalık Hedef Durumu")
+        
+        bir_hafta_once = pd.to_datetime(date.today() - timedelta(days=7))
+        haftalik_df = ogr_df[ogr_df["Tarih"] >= bir_hafta_once]
+        
+        toplam_cozulen = (haftalik_df["Kazanim_D"] + haftalik_df["Kazanim_Y"] + haftalik_df["Kazanim_B"] +
+                          haftalik_df["Beceri_D"] + haftalik_df["Beceri_Y"] + haftalik_df["Beceri_B"]).sum()
+        
+        HEDEF = 150
+        ilerleme = min(toplam_cozulen / HEDEF, 1.0)
+        
+        st.progress(ilerleme)
+        st.caption(f"Bu hafta toplam **{toplam_cozulen}** soru çözdün. Hedef: {HEDEF} soru. %{int(ilerleme*100)} tamamlandı!")
+
+        # --- VELİ KARNESİ ---
+        st.markdown("---")
+        st.subheader("👨‍👩‍👦 Veli Bilgilendirme Kartı")
+        
+        if st.button("Veli Karnesi Oluştur"):
+            toplam_d = ogr_df["Kazanim_D"].sum() + ogr_df["Beceri_D"].sum()
+            toplam_y = ogr_df["Kazanim_Y"].sum() + ogr_df["Beceri_Y"].sum()
+            genel_basari = int((toplam_d / (toplam_d + toplam_y + 1)) * 100)
+            en_cok_cozulen = ogr_df["Konu"].mode()[0] if not ogr_df["Konu"].empty else "Yok"
+            
+            karne_metni = f"""
+            📢 **SAYIN VELİMİZ,**
+            
+            Öğrenciniz **{ogrenci_adi}** için güncel konu analizi:
+            
+            ✅ **Toplam Doğru:** {toplam_d}
+            📉 **Toplam Yanlış:** {toplam_y}
+            📊 **Genel Başarı:** %{genel_basari}
+            📚 **En Çok Çalışılan Konu:** {en_cok_cozulen}
+            
+            *Bu rapor Dijital Eğitim Takip Sistemi tarafından oluşturulmuştur.*
+            """
+            st.info(karne_metni)
+
+# --- BÖLÜM 3: ÖĞRETMEN LİSTESİ ---
+if ogretmen_modu:
+    st.markdown("---")
+    st.header("📋 Tüm Sınıf Dökümü")
+    st.dataframe(df)
+    csv = df.to_csv(index=False).encode('utf-8')
+    st.download_button("Listeyi İndir", csv, "sinif_listesi.csv", "text/csv")
