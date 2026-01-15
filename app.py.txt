@@ -1,0 +1,23 @@
+import streamlit as st
+import pandas as pd
+from datetime import date
+
+# Başlık
+st.title("📚 Öğrenci Soru Takip Sistemi")
+
+# -- BÖLÜM 1: Veri Girişi --
+st.header("Veri Girişi")
+with st.form("giris_formu"):
+    ogrenci = st.text_input("Öğrenci Adı")
+    ders = st.selectbox("Ders", ["Matematik", "Türkçe", "Fen", "Sosyal"])
+    soru = st.number_input("Çözülen Soru", min_value=1)
+    
+    # Butona basınca ne olsun?
+    kaydet = st.form_submit_button("Kaydet")
+    
+    if kaydet:
+        st.success(f"{ogrenci} için {soru} soru kaydedildi! (Not: Bu demo sürümüdür)")
+
+# -- BÖLÜM 2: Rapor (Örnek) --
+st.header("Özet Rapor")
+st.info("Burada grafikler görünecek.")
