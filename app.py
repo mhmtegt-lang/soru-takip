@@ -56,7 +56,6 @@ if sifre == "1234":
     ogretmen_modu = True
     st.sidebar.success("Öğretmen Girişi Başarılı")
     
-    # 1. Özellik: Duyuru Panosu Yönetimi
     st.sidebar.markdown("---")
     st.sidebar.subheader("📢 Duyuru Panosu")
     yeni_duyuru = st.sidebar.text_area("Öğrencilere Mesajınız:", value=duyuru_oku())
@@ -72,60 +71,61 @@ if aktif_duyuru and aktif_duyuru != "Henüz bir duyuru yok.":
 # --- BÖLÜM 1: ÖĞRENCİ VERİ GİRİŞİ ---
 st.subheader("📝 Veri Girişi")
 
-with st.form("veri_giris_formu"):
-    c1, c2, c3 = st.columns(3)
-    okul_no = c1.text_input("Okul Numarası (Zorunlu)", max_chars=5) 
-    ogrenci_adi = c2.text_input("Adın Soyadın").upper()
-    tarih = c3.date_input("Tarih", date.today())
-    
-    # 2. Özellik: Sınıf ve Konu Seçimi
-    c4, c5 = st.columns(2)
-    secilen_sinif = c4.selectbox("Sınıfını Seç", list(MEB_KONULARI.keys()))
-    secilen_konu = c5.selectbox("Bugün Hangi Konuyu Çalıştın?", MEB_KONULARI[secilen_sinif])
+# Form yapısını kaldırdık, artık anlık güncellenecek
+c1, c2, c3 = st.columns(3)
+okul_no = c1.text_input("Okul Numarası (Zorunlu)", max_chars=5) 
+ogrenci_adi = c2.text_input("Adın Soyadın").upper()
+tarih = c3.date_input("Tarih", date.today())
 
-    st.markdown("---")
-    st.write("Performans Sonuçları:")
-    
-    col_kazanim, col_beceri = st.columns(2)
-    
-    with col_kazanim:
-        st.markdown("**1. Kazanım (Temel) Sorular**")
-        kd = st.number_input("Doğru", min_value=0, key="kd")
-        ky = st.number_input("Yanlış", min_value=0, key="ky")
-        kb = st.number_input("Boş", min_value=0, key="kb")
+# Sınıf ve Konu Seçimi (Artık burası canlı çalışır)
+c4, c5 = st.columns(2)
+secilen_sinif = c4.selectbox("Sınıfını Seç", list(MEB_KONULARI.keys()))
+# Sınıf değişince buradaki liste otomatik yenilenir
+secilen_konu = c5.selectbox("Bugün Hangi Konuyu Çalıştın?", MEB_KONULARI[secilen_sinif])
 
-    with col_beceri:
-        st.markdown("**2. Beceri (Yeni Nesil) Sorular**")
-        bd = st.number_input("Doğru", min_value=0, key="bd")
-        by = st.number_input("Yanlış", min_value=0, key="by")
-        bb = st.number_input("Boş", min_value=0, key="bb")
-    
-    kaydet = st.form_submit_button("Kaydet ve Analiz Et")
+st.markdown("---")
+st.write("Performans Sonuçları:")
 
-    if kaydet:
-        if not okul_no or not ogrenci_adi:
-            st.error("Lütfen Okul No ve İsim giriniz!")
-        else:
-            yeni_kayit = {
-                "Tarih": [pd.to_datetime(tarih)],
-                "Okul_No": [okul_no],
-                "Ogrenci_Adi": [ogrenci_adi],
-                "Sinif": [secilen_sinif],
-                "Konu": [secilen_konu],
-                "Kazanim_D": [kd], "Kazanim_Y": [ky], "Kazanim_B": [kb],
-                "Beceri_D": [bd], "Beceri_Y": [by], "Beceri_B": [bb]
-            }
-            yeni_df = pd.concat([df, pd.DataFrame(yeni_kayit)], ignore_index=True)
-            veri_kaydet(yeni_df)
-            df = yeni_df 
-            st.success(f"Tebrikler {ogrenci_adi}! {secilen_konu} konusundaki çalışman kaydedildi.")
+col_kazanim, col_beceri = st.columns(2)
+
+with col_kazanim:
+    st.markdown("**1. Kazanım (Temel) Sorular**")
+    kd = st.number_input("Doğru", min_value=0, key="kd")
+    ky = st.number_input("Yanlış", min_value=0, key="ky")
+    kb = st.number_input("Boş", min_value=0, key="kb")
+
+with col_beceri:
+    st.markdown("**2. Beceri (Yeni Nesil) Sorular**")
+    bd = st.number_input("Doğru", min_value=0, key="bd")
+    by = st.number_input("Yanlış", min_value=0, key="by")
+    bb = st.number_input("Boş", min_value=0, key="bb")
+
+st.markdown("---")
+kaydet = st.button("Kaydet ve Analiz Et")
+
+if kaydet:
+    if not okul_no or not ogrenci_adi:
+        st.error("Lütfen Okul No ve İsim giriniz!")
+    else:
+        yeni_kayit = {
+            "Tarih": [pd.to_datetime(tarih)],
+            "Okul_No": [okul_no],
+            "Ogrenci_Adi": [ogrenci_adi],
+            "Sinif": [secilen_sinif],
+            "Konu": [secilen_konu],
+            "Kazanim_D": [kd], "Kazanim_Y": [ky], "Kazanim_B": [kb],
+            "Beceri_D": [bd], "Beceri_Y": [by], "Beceri_B": [bb]
+        }
+        yeni_df = pd.concat([df, pd.DataFrame(yeni_kayit)], ignore_index=True)
+        veri_kaydet(yeni_df)
+        df = yeni_df 
+        st.success(f"Tebrikler {ogrenci_adi}! {secilen_konu} konusundaki çalışman kaydedildi.")
 
 # --- BÖLÜM 2: ANALİZ VE KARNE ---
 if okul_no:
     ogr_df = df[df["Okul_No"] == okul_no].copy()
     
     if not ogr_df.empty:
-        # 3. Özellik: Hedef Çubuğu (Haftalık Hedef: 150 Soru)
         st.markdown("---")
         st.subheader("🎯 Haftalık Hedef Durumu")
         
@@ -146,7 +146,7 @@ if okul_no:
             st.balloons()
             st.success("🏆 HARİKASIN! Haftalık hedefini tamamladın!")
 
-        # 4. Özellik: Veli Karnesi Oluşturma
+        # Veli Karnesi ve Grafik
         st.markdown("---")
         c_grafik, c_karne = st.columns([2, 1])
         
@@ -164,7 +164,7 @@ if okul_no:
             if st.button("Veli Karnesi Oluştur"):
                 toplam_d = ogr_df["Kazanim_D"].sum() + ogr_df["Beceri_D"].sum()
                 toplam_y = ogr_df["Kazanim_Y"].sum() + ogr_df["Beceri_Y"].sum()
-                genel_basari = int((toplam_d / (toplam_d + toplam_y + 1)) * 100) # Sıfıra bölme hatası olmasın diye +1
+                genel_basari = int((toplam_d / (toplam_d + toplam_y + 1)) * 100)
                 en_cok_cozulen = ogr_df["Konu"].mode()[0] if not ogr_df["Konu"].empty else "Yok"
                 
                 karne_metni = f"""
@@ -181,7 +181,6 @@ if okul_no:
                 *Bu rapor Dijital Eğitim Takip Sistemi tarafından oluşturulmuştur.*
                 """
                 st.info(karne_metni)
-                st.caption("👆 Bu metnin ekran görüntüsünü alıp ailene gönderebilirsin.")
 
 # --- BÖLÜM 3: ÖĞRETMEN LİSTESİ ---
 if ogretmen_modu:
