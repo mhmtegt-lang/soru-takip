@@ -93,4 +93,30 @@ if okul_no:
     
     if not ogr_gecmis.empty:
         st.markdown("---")
-        st.header(f
+        st.header(f"📅 {ogrenci_adi} - Gelişim Tablosu")
+        
+        # Grafik için veriyi düzenle: Toplam Doğruyu Hesapla
+        ogr_gecmis["Toplam Doğru"] = ogr_gecmis["Kazanim_D"] + ogr_gecmis["Beceri_D"]
+        ogr_gecmis["Toplam Yanlış"] = ogr_gecmis["Kazanim_Y"] + ogr_gecmis["Beceri_Y"]
+
+        # Çizgi Grafik (Line Chart) - Tarihsel Gelişim
+        fig = px.line(ogr_gecmis, x="Tarih", y=["Toplam Doğru", "Toplam Yanlış"], 
+                      markers=True, title="Gün Gün Doğru/Yanlış Değişimi")
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # Detaylı Sütun Grafik (Bar Chart)
+        st.write("### Soru Tipine Göre Detaylı Gelişim")
+        fig_bar = px.bar(ogr_gecmis, x="Tarih", y=["Kazanim_D", "Beceri_D"], 
+                         title="Kazanım vs Beceri Doğru Sayıları",
+                         labels={"value": "Soru Sayısı", "variable": "Soru Tipi"},
+                         barmode='group')
+        st.plotly_chart(fig_bar, use_container_width=True)
+
+# --- BÖLÜM 3: ÖĞRETMEN LİSTESİ ---
+if ogretmen_modu:
+    st.markdown("---")
+    st.header("📋 Tüm Sınıf Dökümü")
+    st.dataframe(df)
+    
+    csv_indir = df.to_csv(index=False).encode('utf-8')
+    st.download_button("Excel/CSV Olarak İndir", csv_indir, "sinif_takip.csv", "text/csv")
