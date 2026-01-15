@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
 from datetime import date
 
 # --- SAYFA AYARLARI ---
@@ -94,16 +93,4 @@ if okul_no:
     
     if not ogr_gecmis.empty:
         st.markdown("---")
-        st.header(f"📅 {ogrenci_adi} - Gelişim Tablosu")
-        
-        # Grafik için veriyi düzenle: Toplam Doğruyu Hesapla
-        ogr_gecmis["Toplam Doğru"] = ogr_gecmis["Kazanim_D"] + ogr_gecmis["Beceri_D"]
-        ogr_gecmis["Toplam Yanlış"] = ogr_gecmis["Kazanim_Y"] + ogr_gecmis["Beceri_Y"]
-
-        # Çizgi Grafik (Line Chart) - Tarihsel Gelişim
-        fig = px.line(ogr_gecmis, x="Tarih", y=["Toplam Doğru", "Toplam Yanlış"], 
-                      markers=True, title="Gün Gün Doğru/Yanlış Değişimi")
-        st.plotly_chart(fig, use_container_width=True)
-        
-        # Detaylı Sütun Grafik (Bar Chart)
-        st.write("### Soru Tipine Göre Det
+        st.header(f
