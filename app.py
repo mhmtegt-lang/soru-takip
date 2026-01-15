@@ -86,4 +86,42 @@ with st.form("veri_giris_formu"):
             yeni_df = pd.concat([df, pd.DataFrame(yeni_kayit)], ignore_index=True)
             veri_kaydet(yeni_df)
             df = yeni_df 
-            st.success(f"{tarih} tarihli verilerin
+            st.success(f"{tarih} tarihli verilerin başarıyla kaydedildi!")
+
+# --- BÖLÜM 2: ÖĞRENCİ GELİŞİM GRAFİKLERİ ---
+if okul_no:
+    # Filtreleme
+    ogr_gecmis = df[df["Okul_No"] == okul_no].copy()
+    
+    if not ogr_gecmis.empty:
+        # Tarih sıralaması artık hata vermez çünkü hepsi datetime formatında
+        ogr_gecmis = ogr_gecmis.sort_values("Tarih")
+        
+        st.markdown("---")
+        st.header(f"📅 {ogrenci_adi} - Gelişim Tablosu")
+        
+        # Grafik Verileri
+        ogr_gecmis["Toplam Doğru"] = ogr_gecmis["Kazanim_D"] + ogr_gecmis["Beceri_D"]
+        ogr_gecmis["Toplam Yanlış"] = ogr_gecmis["Kazanim_Y"] + ogr_gecmis["Beceri_Y"]
+
+        # Çizgi Grafik
+        fig = px.line(ogr_gecmis, x="Tarih", y=["Toplam Doğru", "Toplam Yanlış"], 
+                      markers=True, title="Gün Gün Doğru/Yanlış Değişimi")
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # Sütun Grafik
+        st.write("### Soru Tipine Göre Detaylı Gelişim")
+        fig_bar = px.bar(ogr_gecmis, x="Tarih", y=["Kazanim_D", "Beceri_D"], 
+                         title="Kazanım vs Beceri Doğru Sayıları",
+                         labels={"value": "Soru Sayısı", "variable": "Soru Tipi"},
+                         barmode='group')
+        st.plotly_chart(fig_bar, use_container_width=True)
+
+# --- BÖLÜM 3: ÖĞRETMEN LİSTESİ ---
+if ogretmen_modu:
+    st.markdown("---")
+    st.header("📋 Tüm Sınıf Dökümü")
+    st.dataframe(df)
+    
+    csv_indir = df.to_csv(index=False).encode('utf-8')
+    st.download_button("Excel/CSV Olarak İndir", csv_indir, "sinif_takip.csv", "text/csv")
